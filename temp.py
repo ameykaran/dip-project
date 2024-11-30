@@ -21,15 +21,17 @@ def get_card():
     num = np.random.choice(NUMBERS)
     img_num = np.random.choice([1, 2, 3, 4, 5])
     img_path = f'dataset/{suit}{num}-{img_num}.jpg'
+    # print(img_path)
 
     img = cv2.imread(img_path)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     if img is None:
         raise FileNotFoundError(f"Image not found: {img_path}")
 
     h, w = img.shape[:2]
     if h < w:
         img = cv2.rotate(img, cv2.ROTATE_90_CLOCKWISE)
-    return cv2.cvtColor(img, cv2.COLOR_BGR2RGB), suit, num
+    return img, suit, num
 
 
 def fill_card(img):
@@ -183,9 +185,6 @@ def match_template(img):
     return results
 
 
-# Additional functions for prediction, visualization, and evaluation remain similar.
-# Include docstrings for remaining functions as done above.
-
 
 def predict_digit(image):
     """
@@ -308,9 +307,10 @@ def evaluate(iterations):
     correct = {f'{suit}{num}': 0 for suit in SUITS for num in NUMBERS}
     total = {f'{suit}{num}': 0 for suit in SUITS for num in NUMBERS}
     color_detection = {suit: 0 for suit in SUITS}
+    until_now = 0
 
     with tqdm(total=iterations, desc="Evaluating") as pbar:
-        for _ in range(iterations):
+        while until_now < iterations:
             card_image, actual_suit, actual_num = get_card()
             gray_image = cv2.cvtColor(card_image, cv2.COLOR_RGB2GRAY)
             predicted_color = find_color(card_image)
@@ -325,8 +325,10 @@ def evaluate(iterations):
                 correct[f'{actual_suit}{actual_num}'] += 1
             if predicted_digits:
                 total[f'{actual_suit}{actual_num}'] += 1
-
-            pbar.update(1)
+                until_now += 1
+                pbar.update(1)
+            # else:
+            #     print("No prediction found for:", actual_suit, actual_num)
 
     # Calculate accuracy
     accuracy = {
@@ -345,8 +347,6 @@ def evaluate(iterations):
     print("Total Predictions:", sum(total.values()))
 
     return accuracy
-
-
 
 
 acc = evaluate(iterations = 200)
